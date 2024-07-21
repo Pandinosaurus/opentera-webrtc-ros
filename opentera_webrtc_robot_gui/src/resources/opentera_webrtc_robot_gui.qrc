@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>Test_640x480.png</file>
         <file>phone-call-end.png</file>
+        <file>phone-call-start.png</file>
         <file>stylesheet.qss</file>
         <file>settings-gear.png</file>
         <file>mic-on.png</file>
@@ -10,5 +11,24 @@
         <file>volume-mute.png</file>
         <file>video-camera-on.png</file>
         <file>video-camera-off.png</file>
+        <file>battery-full.png</file>
+        <file>battery-medium.png</file>
+        <file>battery-low.png</file>
+        <file>battery-almost-empty.png</file>
+        <file>battery-slash.png</file>
+        <file>battery-charging.png</file>
+        <file>network-0-bars.png</file>
+        <file>network-1-bar.png</file>
+        <file>network-2-bars.png</file>
+        <file>network-3-bars.png</file>
+        <file>network-4-bars.png</file>
+        <file>three-horizontal-lines.png</file>
+        <file>computer.png</file>
+        <file>down-arrow.png</file>
+        <file>show-camera.png</file>
+        <file>hide-camera.png</file>
+        <file>expand-arrows.png</file>
+        <file>frame-person.png</file>
+        <file>frame-person-disable.png</file>
     </qresource>
 </RCC>

@@ -1,58 +1,48 @@
 #include "ROSCameraView.h"
-#include <QSize>
-#include <QBrush>
-#include <QColor>
-#include <QDebug>
 
-GLCameraWidget::GLCameraWidget(QWidget* parent) : QGLWidget(parent)
-{
-    // resize(640,480);
-}
+#include <QPainter>
 
-void GLCameraWidget::setImage(const QImage& image)
+CameraWidget::CameraWidget(QWidget* parent) : QWidget{parent} {}
+
+void CameraWidget::setImage(const QImage& image, bool repaintNow)
 {
     // Make sure we copy the image (could be deleted somewhere else)
     m_image = image.copy();
-    update();
-}
 
-
-void GLCameraWidget::paintEvent(QPaintEvent* event)
-{
-    QPainter p(this);
-
-    // Set the painter to use a smooth scaling algorithm.
-    p.setRenderHint(QPainter::SmoothPixmapTransform, 1);
-
-    // Draw Black Background
-    p.fillRect(this->rect(), QBrush(Qt::black));
-
-
-    if (m_image.width() > 0 && m_image.height() > 0)
+    if (repaintNow)
     {
-        // Find minimal scale
-        float scale = std::min((float)this->width() / m_image.width(), (float)this->height() / m_image.height());
-        float new_width = scale * m_image.width();
-        float new_height = scale * m_image.height();
-        int offset_x = (rect().width() - new_width) / 2;
-        int offset_y = (rect().height() - new_height) / 2;
-
-        // Draw image
-        QRect drawingRect(std::max(0, offset_x), std::max(0, offset_y), new_width, new_height);
-
-        // Paint in current rect
-        p.drawImage(drawingRect, m_image);
-
-        // This will strech the image...
-        // p.drawImage(this->rect(), m_image);
+        repaint();
     }
 }
 
+void CameraWidget::paintEvent(QPaintEvent* event)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    painter.fillRect(rect(), QBrush(Qt::black));
+
+    if (m_image.width() <= 0 || m_image.height() <= 0)
+    {
+        return;
+    }
+
+    float scale =
+        std::min(static_cast<float>(width()) / static_cast<float>(m_image.width()),
+            static_cast<float>(height()) / static_cast<float>(m_image.height()));
+    int scaledWidth = static_cast<int>(scale * m_image.width());
+    int scaledHeight = static_cast<int>(scale * m_image.height());
+    int offsetX = std::max(0, (width() - scaledWidth) / 2);
+    int offsetY = std::max(0, (height() - scaledHeight) / 2);
+
+    painter.drawImage(QRect(offsetX, offsetY, scaledWidth, scaledHeight), m_image);
+}
+
 ROSCameraView::ROSCameraView(QWidget* parent)
-    : QWidget(parent),
-      m_layout(nullptr),
-      m_label(nullptr),
-      m_cameraWidget(nullptr)
+    : QWidget{parent},
+      m_layout{nullptr},
+      m_label{nullptr},
+      m_cameraWidget{nullptr}
 {
     m_layout = new QVBoxLayout(this);
 
@@ -61,12 +51,16 @@ ROSCameraView::ROSCameraView(QWidget* parent)
     m_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     m_label->setMaximumHeight(25);
     m_layout->addWidget(m_label);
+
     // CameraWidget
-    m_cameraWidget = new GLCameraWidget(this);
+    m_cameraWidget = new CameraWidget(this);
     m_layout->addWidget(m_cameraWidget);
+
+    m_currentStyle = CameraStyle::widget;
+    m_widgetStyleLayout = m_layout;
 }
 
-ROSCameraView::ROSCameraView(const QString& label, QWidget* parent) : ROSCameraView(parent)
+ROSCameraView::ROSCameraView(const QString& label, QWidget* parent) : ROSCameraView{parent}
 {
     m_label->setText(label);
 }
@@ -77,8 +71,35 @@ void ROSCameraView::setText(const QString& text)
         m_label->setText(text);
 }
 
-void ROSCameraView::setImage(const QImage& image)
+void ROSCameraView::setImage(const QImage& image, bool repaintNow)
 {
     if (m_cameraWidget)
-        m_cameraWidget->setImage(image);
+        m_cameraWidget->setImage(image, repaintNow);
+}
+
+void ROSCameraView::useWindowStyle()
+{
+    if (m_currentStyle == CameraStyle::widget)
+    {
+        m_layout->setMargin(0);
+        m_layout->setSpacing(0);
+        m_layout->setContentsMargins(0, 0, 0, 0);
+        m_layout->removeWidget(m_label);
+        m_currentStyle = CameraStyle::window;
+    }
+}
+
+void ROSCameraView::useWidgetStyle()
+{
+    if (m_currentStyle == CameraStyle::window)
+    {
+        m_layout = m_widgetStyleLayout;
+        m_currentStyle = CameraStyle::widget;
+        m_layout->insertWidget(0, m_label);
+    }
+}
+
+CameraStyle ROSCameraView::getCurrentStyle()
+{
+    return m_currentStyle;
 }
